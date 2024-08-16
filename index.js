@@ -7,7 +7,7 @@ app.get('/', (req, res) => {
     res.send('Hello World!')
 })
 
-app.get('/object', (req, res) => {
+app.get('/home', (req, res) => {
     res.json({ "name": "Viraj" })
 })
 
