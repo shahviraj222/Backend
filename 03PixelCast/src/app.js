@@ -21,4 +21,17 @@ app.use(express.static("public"))
 
 // for using cookies
 app.use(cookieParser())
+
+
+// routes import
+import userRouter from './routes/user.routes.js'
+
+// router decleration
+// because we have sperated the routers so we have to use the middleware for calling back 
+
+app.use('/api/v1/users', userRouter)
+
+// the url look like
+// http://localhost:8000/api/v1/users    = now the routes path
+// http://localhost:8000/api/v1/users/register   = finally the register is called
 export { app }
