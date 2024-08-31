@@ -23,23 +23,25 @@ const registerUser = asyncHandler(async (req, res) => {
         throw new ApiError(400, "All Fields Required")
     }
 
-    const existedUser = User.findOne({
+    const existedUser = await User.findOne({
         // chek all entry (individually) inside the array of mongo  database
-        $or: [username, email]
+        $or: [{ username }, { email }]
     })
 
     if (existedUser) {
         ApiError(409, "User already exist with username and email")
     }
 
-    const avatarLocalPath = req.field?.avatar[0]?.path;
-    const coverImageLocalPath = req.field?.coverImage[0]?.path;
+    const avatarLocalPath = req.files?.avatar[0]?.path;
+    // console.log(avatarLocalPath, req.files)
+    const coverImageLocalPath = req.files?.coverImage[0]?.path;
 
     if (!avatarLocalPath) {
         throw new ApiError(400, "Avatar file required")
     }
 
     const avatar = await uploadOnCloudinary(avatarLocalPath)
+    console.log("Avatar", avatar)
     const coverImage = await uploadOnCloudinary(coverImageLocalPath)
 
     if (!avatar) {
