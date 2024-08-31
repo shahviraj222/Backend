@@ -1,6 +1,7 @@
 import mongoose, { Schema } from 'mongoose'
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcrypt'
+
 const userSchema = new Schema({
 
     username: {
@@ -47,11 +48,14 @@ const userSchema = new Schema({
 }, { timestamps: true })
 
 //pre is the mongoose hook we can apply of diffrenet funcitons
-// here in save funciton we have applied the hook 
+// pre save hook is a function which run just before the schema save in monogoose
+// This Context in hook refer to the instance of doument to be saved
+// this.isModified("password") = this check weather the old password field change or not
+
 userSchema.pre("save", async function (next)           //this is middleware so we have to take next so next pass the flag to called one
 {
     if (!this.isModified("password")) return next();
-    this.password = bcrypt.hash(this.password, 10)     // 8  is round for algo
+    this.password = await bcrypt.hash(this.password, 10)     // 8  is round for algo
     next();
 })
 
