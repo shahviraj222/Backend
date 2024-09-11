@@ -78,4 +78,11 @@ const registerUser = asyncHandler(async (req, res) => {
     // res.status(200).send("OK")
 })
 
-export { registerUser } 
+const loginUser = asyncHandler(async (req, res) => {
+    // 1 Take the user credential
+    // 2 Check In mongodb
+    // 3 Send Response
+
+})
+
+export { registerUser, loginUser } 
