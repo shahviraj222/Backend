@@ -4,17 +4,34 @@ import { User } from '../models/user.model.js'
 import { uploadOnCloudinary } from '../utils/cloudinary.js'
 import { ApiResponse } from '../utils/ApiResponse.js'
 
-//Detail of register controller  
-// 1 Get the data from frontend
-// 2 Validate the data coming
-// 3 Check weather user exist in database or not
-// 4 Upload File and Validate
-// 5 Insert in database
-// 6 After insert remove the password and refreshtoken 
-// 7 Return Response With Data
 
+
+const generateAccessAndRefreshTokens = async (userId) => {
+    try {
+        const user = await User.findById(userId)
+        const accessToken = user.generateAccessToken()
+        const refreshToken = user.generateRefreshToken()
+
+        user.refreshToken = refreshToken
+        await user.save({ validateBeforeSave: false })     // pre function is not run that is define in models validateBeforeSave: false 
+
+        return { accessToken, refreshToken }
+
+    } catch (error) {
+        throw new ApiError(500, "Something went wrong in generating tokens")
+    }
+}
 
 const registerUser = asyncHandler(async (req, res) => {
+
+    //Detail of register controller  
+    // 1 Get the data from frontend
+    // 2 Validate the data coming
+    // 3 Check weather user exist in database or not
+    // 4 Upload File and Validate
+    // 5 Insert in database
+    // 6 After insert remove the password and refreshtoken 
+    // 7 Return Response With Data
     const { fullname, email, username, password } = req.body
     console.log("username:", username)
 
@@ -79,10 +96,62 @@ const registerUser = asyncHandler(async (req, res) => {
 })
 
 const loginUser = asyncHandler(async (req, res) => {
-    // 1 Take the user credential
-    // 2 Check In mongodb
-    // 3 Send Response
+    // 1 Take the user credential (check email_id and password)
+    // 2 Check In mongodb (match the password)
+    // 3 Send Response (accesstoken and refreshtoken)
+    // 4 Send Tokens In Cookies
 
+    const { email, username, password } = req.body
+    if (!username || !email) {
+        throw new ApiError("username or email required")
+    }
+
+    // if you want to search by the email
+    // User.findOne({email})
+    // User.findOne({username})
+
+    const user = await User.findOne({
+        // advance query if you want to search by both ( email , username )
+        // MongoDB Operator:
+        $or: [{ username }, { email }]
+    })
+
+    if (!user) {
+        throw new ApiError(404, "User does not exist")
+    }
+
+    const isPasswordValid = user.isPasswordCorrect(password)
+    if (!isPasswordValid) {
+        throw new ApiError(401, "Invalid User Password")
+    }
+
+    const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(user._id)
+
+    const loggedInUser = await User.findById(user._id).select("-password -refreshToken")
+
+    const option = {
+        httpOnly: true,
+        secure: true
+    }
+
+    return res
+        .status(200)
+        .cookie("accessToken", accessToken, option)
+        .cookie("refreshToken", refreshToken, option)
+        .json(
+            new ApiResponse(
+                200,
+                {
+                    user: loggedInUser, accessToken, refreshToken
+                },
+                "User logged in successfully"
+            )
+        )
 })
 
+const logoutUser = asyncHandler(async (req, res) => {
+    //  find user
+    //  remove cookies
+    //  remove refresh token
+})
 export { registerUser, loginUser } 
