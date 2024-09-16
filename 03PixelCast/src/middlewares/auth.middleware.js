@@ -6,18 +6,21 @@ import jwt from 'jsonwebtoken'
 import { User } from "../models/user.model.js";
 export const verifyJWT = asyncHandler(async (req, res, next) => {
     try {
+        // req.header("Authorization")?.replace("Bearer ", "") this is for mobile version where we don't have cookies to store the data
         const token = req.cookies?.accessToken || req.header("Authorization")?.replace("Bearer ", "")
         if (!token) {
+            // if we don't find the accessToken
             throw new ApiError(401, "Unauthorized request")
         }
-        const decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET)
+        const decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET)   //decoding the token
         const user = await User.findById(decodedToken?._id).select("-password -refreshToken")
 
         if (!user) {
+            // if the access token is invalid prevention by the hacking
             throw new ApiError(401, "Invalid Access Token")
         }
 
-        req.user = user
+        req.user = user   // because we are using the middle ware we can set this parameter
         next()
     } catch (error) {
         throw new ApiError(401, error.message || "Invalid access Token")

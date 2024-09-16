@@ -3,7 +3,7 @@ import { ApiError } from '../utils/ApiError.js'
 import { User } from '../models/user.model.js'
 import { uploadOnCloudinary } from '../utils/cloudinary.js'
 import { ApiResponse } from '../utils/ApiResponse.js'
-
+import jwt, { decode } from 'jsonwebtoken'
 
 
 const generateAccessAndRefreshTokens = async (userId) => {
@@ -157,6 +157,7 @@ const logoutUser = asyncHandler(async (req, res) => {
 
     // find and update the entry
     await User.findByIdAndUpdate(
+        // the req.user is set in auth.middleware or In VeryfyJWT
         req.user._id,
         {
             $set: {
@@ -179,4 +180,52 @@ const logoutUser = asyncHandler(async (req, res) => {
         .clearCookie("refreshToken", option)
         .json(new ApiResponse(200, {}, "User logged Out"))
 })
-export { registerUser, loginUser, logoutUser } 
+
+const refreshAccessToken = asyncHandler(async (req, res) => {
+    // take refresh token
+    // check with database
+    // now generate new accesstoken 
+
+    const incomingRefreshToken = req.cookie.refreshToken || req.body.refreshToken
+
+    if (!incomingRefreshToken) {
+        throw new ApiError(401, "unauthorized request")
+    }
+    try {
+        const decodeToken = jwt.verify(
+            incomingRefreshToken,
+            process.env.REFRESH_TOKEN_SECRET
+        )
+        const user = await User.findById(decodeToken?._id)
+
+        if (!user) {
+            throw new ApiError(401, "Invalid refresh token")
+        }
+
+        if (incomingRefreshToken !== user?.refreshToken) {
+            throw new ApiError(401, "referesh token is expired or used")
+        }
+
+        const option = {
+            httpOnly: true,
+            secure: true
+        }
+
+        const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(user._id)
+
+        return res
+            .status(200)
+            .cookie("accessToken", accessToken, option)
+            .cookie("refreshToken", refreshToken, option)
+            .json(new Response(
+                200,
+                { accessToken, refreshToken },
+                "Access Token Refreshed"
+            ))
+    } catch (error) {
+        throw new ApiError(401, error?.message || "Invalid refresh token")
+    }
+})
+
+
+export { registerUser, loginUser, logoutUser, refreshAccessToken } 
