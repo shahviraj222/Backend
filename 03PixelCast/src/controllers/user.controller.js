@@ -46,7 +46,7 @@ const registerUser = asyncHandler(async (req, res) => {
     })
 
     if (existedUser) {
-        ApiError(409, "User already exist with username and email")
+        throw new ApiError(409, "User already exist with username and email")
     }
 
     const avatarLocalPath = req.files?.avatar[0]?.path;
@@ -102,7 +102,7 @@ const loginUser = asyncHandler(async (req, res) => {
     // 4 Send Tokens In Cookies
 
     const { email, username, password } = req.body
-    if (!username || !email) {
+    if (!username && !email) {
         throw new ApiError("username or email required")
     }
 
