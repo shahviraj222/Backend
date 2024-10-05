@@ -51,7 +51,7 @@ router
 
 router
     .route('/update-cover-image')
-    .patch(verifyJWT, upload.single("/coverImage"), udpateUserCoverImage)
+    .patch(verifyJWT, upload.single("coverImage"), udpateUserCoverImage)
 
 router
     .route('/c/:username')
