@@ -428,9 +428,70 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
         .json(new ApiResponse(200, channel[0], "User Channel Fetched Successfully"))
 })
 
+const getWatchHistory = asyncHandler(async (req, res) => {
+
+    // const id = req.user._id  //we only get the string not actual id
+    // User.findbyId(id)
+    // here the findbyId is gone by mongoose it will take care of the id convet into mongoose id
+    // all aggreation code go as it is ! So we have to take care 
+
+    const user = await User.aggregate([
+        {
+            $match: {
+                // _id: new mongoose.Types.ObjectId(req.user._id)  //deprecated
+                // _id:mongoose.Types.ObjectId(req.user._id)       // some time give error
+                _id: new ObjectId(product_id)                     // safest
+            }
+        },
+        {
+            $lookup: {
+                from: "videos",
+                localField: "watchHistory",   // konsa filed match karu from user
+                foreignField: "_id",          // kis se match karu from videos
+                as: "watchHistory",
+                pipeline: [
+                    // owner is return 
+                    {
+                        $lookup: {
+                            from: "users",
+                            localField: "owner",
+                            foreignField: "_id",
+                            as: "owner",
+                            // we are applying pipline in the owner filed only
+                            // owner only contain the below fields
+                            pipeline: [
+                                {
+                                    $project: {
+                                        fullname: 1,
+                                        username: 1,
+                                        avatar: 1
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    // defining structure of the owner (giving only object or else array is return)
+                    {
+                        $addFields: {
+                            // over writing the owner code
+                            owner: {
+                                $first: "$owner"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+
+    ])
+
+    return res
+        .status(200)
+        .json(new ApiResponse(200, user[0].watchHistory, "Watched History Fetched Successfully"))
+})
 
 export {
     registerUser, loginUser, logoutUser, refreshAccessToken, changeCurrentPassword, getCurrentUser, updateAccountDetail, updateUserAvatar, udpateUserCoverImage,
     getUserChannelProfile,
-    // getWatchHistory
+    getWatchHistory
 } 
