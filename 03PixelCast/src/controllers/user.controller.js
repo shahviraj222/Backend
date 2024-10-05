@@ -428,26 +428,9 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
         .json(new ApiResponse(200, channel[0], "User Channel Fetched Successfully"))
 })
 
-const getWatchHistory = asyncHandler(async (req, res) => {
 
-    // const id = req.user._id  //we only get the string not actual id
-    // User.findbyId(id)
-    // here the findbyId is gone by mongoose it will take care of the id convet into mongoose id
-    // all aggreation code go as it is ! So we have to take care 
-
-    const user = await User.aggregate([
-        {
-            $match: {
-                // _id: new mongoose.Types.ObjectId(req.user._id)  //deprecated
-                // _id:mongoose.Types.ObjectId(req.user._id)       // some time give error
-                _id: new ObjectId(product_id)                     // safest
-            }
-        }
-    ])
-
-})
 export {
     registerUser, loginUser, logoutUser, refreshAccessToken, changeCurrentPassword, getCurrentUser, updateAccountDetail, updateUserAvatar, udpateUserCoverImage,
     getUserChannelProfile,
-    getWatchHistory
+    // getWatchHistory
 } 
